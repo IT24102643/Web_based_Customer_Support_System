@@ -37,7 +37,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "user"})
-    private List<lk.sliit.customer_care.modelentity.Ticket> tickets;
+    private List<com.example.web_based_customer_support_system.modelentity.Ticket> tickets;
 
     // Getters & setters
     public Long getId() { return id; }
@@ -58,6 +58,6 @@ public class User {
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 
-    public List<lk.sliit.customer_care.modelentity.Ticket> getTickets() { return tickets; }
-    public void setTickets(List<lk.sliit.customer_care.modelentity.Ticket> tickets) { this.tickets = tickets; }
+    public List<com.example.web_based_customer_support_system.modelentity.Ticket> getTickets() { return tickets; }
+    public void setTickets(List<com.example.web_based_customer_support_system.modelentity.Ticket> tickets) { this.tickets = tickets; }
 }
