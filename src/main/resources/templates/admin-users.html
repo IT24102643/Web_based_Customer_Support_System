@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Manage Users - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            min-height: 100vh;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                    radial-gradient(circle at 20% 30%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 70%, rgba(0, 191, 255, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.05) 0%, transparent 70%);
+            animation: gradientShift 20s ease infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+            50% { opacity: 0.8; transform: scale(1.1) rotate(180deg); }
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        header {
+            background: rgba(15, 15, 25, 0.7);
+            backdrop-filter: blur(30px) saturate(180%);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 80px rgba(138, 43, 226, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(138, 43, 226, 0.2);
+            animation: slideDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .navbar {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.2rem 2rem;
+        }
+
+        .navbar ul {
+            list-style: none;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .navbar li a {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 0.9rem 1.8rem;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar li a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #8a2be2 0%, #00bfff 100%);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: -1;
+            border-radius: 14px;
+        }
+
+        .navbar li a:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .navbar li a:hover {
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(138, 43, 226, 0.4);
+            border-color: rgba(138, 43, 226, 0.5);
+        }
+
+        h1 {
+            text-align: center;
+            padding: 1.8rem 2rem 2rem;
+            color: #ffffff;
+            font-size: 2.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ffffff 0%, #8a2be2 50%, #00bfff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+            animation: fadeIn 1s ease-out 0.3s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2.5rem auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            animation: cardEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+        }
+
+        @keyframes cardEntrance {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .stat-card {
+            background: rgba(15, 15, 25, 0.6);
+            backdrop-filter: blur(30px);
+            border-radius: 24px;
+            padding: 2.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(138, 43, 226, 0.2);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #8a2be2 0%, #00bfff 100%);
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 70px rgba(138, 43, 226, 0.3);
+        }
+
+        .stat-card h3 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #8a2be2 0%, #00bfff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 900;
+        }
+
+        .stat-card p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .section {
+            background: rgba(15, 15, 25, 0.6);
+            backdrop-filter: blur(30px);
+            border-radius: 28px;
+            padding: 3rem;
+            margin-bottom: 2.5rem;
+            box-shadow:
+                    0 30px 90px rgba(0, 0, 0, 0.5),
+                    0 0 0 1px rgba(138, 43, 226, 0.2),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            animation: cardEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #8a2be2 0%, #00bfff 100%);
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+        }
+
+        .section h2 {
+            font-size: 1.8rem;
+            color: #ffffff;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        thead {
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.3) 0%, rgba(0, 191, 255, 0.3) 100%);
+            backdrop-filter: blur(10px);
+        }
+
+        th {
+            padding: 1.2rem 1rem;
+            text-align: left;
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid rgba(138, 43, 226, 0.3);
+        }
+
+        td {
+            padding: 1.2rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+        }
+
+        tbody tr {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        tbody tr:hover {
+            background: rgba(138, 43, 226, 0.1);
+            transform: translateX(5px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid;
+        }
+
+        .badge-user {
+            background: rgba(66, 153, 225, 0.15);
+            color: #63b3ed;
+            border-color: rgba(66, 153, 225, 0.3);
+        }
+
+        .badge-agent {
+            background: rgba(72, 187, 120, 0.15);
+            color: #9ae6b4;
+            border-color: rgba(72, 187, 120, 0.3);
+        }
+
+        .badge-admin {
+            background: rgba(245, 101, 101, 0.15);
+            color: #fc8181;
+            border-color: rgba(245, 101, 101, 0.3);
+        }
+
+        .delete-btn, .edit-btn {
+            padding: 0.7rem 1.3rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .edit-btn {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            color: white;
+            margin-right: 0.5rem;
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+        }
+
+        .edit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: skewX(-20deg);
+        }
+
+        .edit-btn:hover::before {
+            left: 100%;
+        }
+
+        .edit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(66, 153, 225, 0.5);
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(229, 62, 62, 0.3);
+        }
+
+        .delete-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: skewX(-20deg);
+        }
+
+        .delete-btn:hover::before {
+            left: 100%;
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(229, 62, 62, 0.5);
+        }
+
+        .delete-btn:disabled {
+            background: rgba(160, 174, 192, 0.3);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .delete-btn:disabled::before {
+            display: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: rgba(15, 15, 25, 0.95);
+            backdrop-filter: blur(30px);
+            border-radius: 28px;
+            padding: 3rem;
+            max-width: 550px;
+            width: 90%;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+            position: relative;
+            animation: modalSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid rgba(138, 43, 226, 0.3);
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #8a2be2 0%, #00bfff 100%);
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+            border-radius: 28px 28px 0 0;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                transform: translateY(-50px) scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.8rem;
+            color: #ffffff;
+            font-weight: 900;
+        }
+
+        .close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: rgba(229, 62, 62, 0.2);
+            color: #fc8181;
+            border-color: rgba(229, 62, 62, 0.4);
+            transform: rotate(90deg);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.7rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            font-size: 0.95rem;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            backdrop-filter: blur(10px);
+            font-family: inherit;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #8a2be2;
+            box-shadow: 0 0 0 4px rgba(138, 43, 226, 0.15);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-group input:disabled {
+            background: rgba(255, 255, 255, 0.02);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn-save, .btn-cancel {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #8a2be2 0%, #00bfff 100%);
+            color: white;
+            box-shadow: 0 8px 24px rgba(138, 43, 226, 0.3);
+        }
+
+        .btn-save::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transition: left 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: skewX(-20deg);
+        }
+
+        .btn-save:hover::before {
+            left: 100%;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(138, 43, 226, 0.5);
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        footer {
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            padding: 2rem;
+            margin-top: auto;
+            border-top: 1px solid rgba(138, 43, 226, 0.2);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #8a2be2 30%, #00bfff 70%, transparent);
+        }
+
+        footer p {
+            font-size: 0.95rem;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        @media (max-width: 768px) {
+            .navbar ul {
+                flex-direction: column;
+                gap: 0.8rem;
+                width: 100%;
+            }
+
+            .navbar li {
+                width: 100%;
+            }
+
+            .navbar li a {
+                width: 100%;
+                justify-content: center;
+            }
+
+            h1 {
+                font-size: 2rem;
+                padding: 1.5rem;
+            }
+
+            .container {
+                padding: 0 1rem;
+            }
+
+            .section {
+                padding: 2rem 1.5rem;
+                border-radius: 24px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th, td {
+                padding: 0.8rem 0.6rem;
+            }
+
+            .edit-btn, .delete-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.8rem;
+            }
+
+            .modal-content {
+                padding: 2rem 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .section h2 {
+                font-size: 1.5rem;
+            }
+
+            .stat-card h3 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <nav class="navbar">
+        <ul>
+            <li><a href="/">🏠 Home</a></li>
+            <li><a href="/admin/dashboard">⚡ Dashboard</a></li>
+            <li><a href="/admin/users">👥 Manage Users</a></li>
+            <li><a href="/admin/analytics">📊 Analytics</a></li>
+            <li><a href="/admin/faq/pending">✅ FAQ Approval</a></li>
+            <li><a href="/feedback/admin/all">💬 Feedback</a></li>
+            <li><a href="/logout">🚪 Logout</a></li>
+        </ul>
+    </nav>
+    <h1>👥 Manage Users & Agents</h1>
+</header>
+
+<div class="container">
+    <!-- Statistics Overview -->
+    <div class="stats">
+        <div class="stat-card">
+            <h3 th:text="${users.size()}">0</h3>
+            <p>Total Users</p>
+        </div>
+        <div class="stat-card">
+            <h3 th:text="${agents.size()}">0</h3>
+            <p>Total Agents</p>
+        </div>
+        <div class="stat-card">
+            <h3 th:text="${admins.size()}">0</h3>
+            <p>Total Admins</p>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="section">
+        <h2>👤 Regular Users</h2>
+        <table th:if="${!users.isEmpty()}">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Phone Number</th>
+                <th>Address</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="user : ${users}">
+                <td th:text="${user.id}">1</td>
+                <td th:text="${user.username}">john_doe</td>
+                <td th:text="${user.phoneNumber}">0771234567</td>
+                <td th:text="${user.address}">Colombo</td>
+                <td><span class="badge badge-user">USER</span></td>
+                <td>
+                    <button class="edit-btn" th:attr="data-user-id=${user.id}" onclick="editUser(this)">
+                        ✏️ Edit
+                    </button>
+                    <button class="delete-btn" th:attr="data-user-id=${user.id}, data-username=${user.username}" onclick="deleteUser(this)">
+                        🗑️ Delete
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div th:if="${users.isEmpty()}" class="empty-state">
+            No users found
+        </div>
+    </div>
+
+    <!-- Agents Table -->
+    <div class="section">
+        <h2>🎧 Support Agents</h2>
+        <table th:if="${!agents.isEmpty()}">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Phone Number</th>
+                <th>Address</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="agent : ${agents}">
+                <td th:text="${agent.id}">2</td>
+                <td th:text="${agent.username}">agent_smith</td>
+                <td th:text="${agent.phoneNumber}">0779876543</td>
+                <td th:text="${agent.address}">Kandy</td>
+                <td><span class="badge badge-agent">AGENT</span></td>
+                <td>
+                    <button class="edit-btn" th:attr="data-user-id=${agent.id}" onclick="editUser(this)">
+                        ✏️ Edit
+                    </button>
+                    <button class="delete-btn" th:attr="data-user-id=${agent.id}, data-username=${agent.username}" onclick="deleteUser(this)">
+                        🗑️ Delete
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div th:if="${agents.isEmpty()}" class="empty-state">
+            No agents found
+        </div>
+    </div>
+
+    <!-- Admins Table -->
+    <div class="section">
+        <h2>⚡ Administrators</h2>
+        <table th:if="${!admins.isEmpty()}">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Phone Number</th>
+                <th>Address</th>
+                <th>Role</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="admin : ${admins}">
+                <td th:text="${admin.id}">3</td>
+                <td th:text="${admin.username}">admin</td>
+                <td th:text="${admin.phoneNumber}">0771111111</td>
+                <td th:text="${admin.address}">Galle</td>
+                <td><span class="badge badge-admin">ADMIN</span></td>
+                <td>
+                    <button class="edit-btn" th:attr="data-user-id=${admin.id}" onclick="editUser(this)">
+                        ✏️ Edit
+                    </button>
+                    <button class="delete-btn" disabled>
+                        🔒 Protected
+                    </button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div th:if="${admins.isEmpty()}" class="empty-state">
+            No administrators found
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>✏️ Edit User Details</h2>
+            <button class="close-btn" onclick="closeEditModal()">&times;</button>
+        </div>
+
+        <form id="editForm">
+            <input type="hidden" id="editUserId">
+
+            <div class="form-group">
+                <label for="editUsername">Username</label>
+                <input type="text" id="editUsername" disabled>
+            </div>
+
+            <div class="form-group">
+                <label for="editPhoneNumber">Phone Number</label>
+                <input type="text" id="editPhoneNumber" pattern="[0-9]{10}" placeholder="e.g., 0771234567" required>
+            </div>
+
+            <div class="form-group">
+                <label for="editAddress">Address</label>
+                <input type="text" id="editAddress" placeholder="Enter address" required>
+            </div>
+
+            <div class="form-group">
+                <label for="editPassword">New Password (Optional)</label>
+                <input type="password" id="editPassword" placeholder="Leave blank to keep current password" minlength="6">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-save">✔️ Save Changes</button>
+                <button type="button" class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<footer>
+    <p>&copy; 2025 Customer Support System. All Rights Reserved.</p>
+</footer>
+
+<script>
+    // Get CSRF token from meta tags
+    function getCsrfToken() {
+        const tokenMeta = document.querySelector('meta[name="_csrf"]');
+        const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+
+        console.log('Token meta element:', tokenMeta);
+        console.log('Header meta element:', headerMeta);
+
+        if (tokenMeta && headerMeta) {
+            const token = tokenMeta.getAttribute('content');
+            const header = headerMeta.getAttribute('content');
+            console.log('CSRF token found:', token);
+            console.log('CSRF header found:', header);
+            return {
+                token: token,
+                header: header
+            };
+        }
+
+        console.warn('CSRF meta tags not found, using fallback');
+        // Fallback to default header name
+        return {
+            token: tokenMeta ? tokenMeta.getAttribute('content') : '',
+            header: 'X-CSRF-TOKEN'
+        };
+    }
+
+    function editUser(button) {
+        const userId = button.getAttribute('data-user-id');
+
+        // Fetch user details
+        fetch(`/admin/user/${userId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const user = data.user;
+
+                    // Populate form
+                    document.getElementById('editUserId').value = user.id;
+                    document.getElementById('editUsername').value = user.username;
+                    document.getElementById('editPhoneNumber').value = user.phoneNumber;
+                    document.getElementById('editAddress').value = user.address;
+                    document.getElementById('editPassword').value = '';
+
+                    // Show modal
+                    document.getElementById('editModal').classList.add('active');
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('❌ Error loading user details: ' + err.message);
+            });
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').classList.remove('active');
+        document.getElementById('editForm').reset();
+    }
+
+    // Handle form submission
+    document.getElementById('editForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const userId = document.getElementById('editUserId').value;
+        const phoneNumber = document.getElementById('editPhoneNumber').value;
+        const address = document.getElementById('editAddress').value;
+        const password = document.getElementById('editPassword').value;
+
+        const updateData = {
+            phoneNumber: phoneNumber,
+            address: address
+        };
+
+        // Only include password if it's not empty
+        if (password && password.trim() !== '') {
+            updateData.password = password;
+        }
+
+        const csrf = getCsrfToken();
+
+        fetch(`/admin/user/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrf.header]: csrf.token
+            },
+            body: JSON.stringify(updateData)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ User updated successfully!');
+                    closeEditModal();
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('❌ Error updating user: ' + err.message);
+            });
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('editModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeEditModal();
+        }
+    });
+
+    function deleteUser(button) {
+        const userId = button.getAttribute('data-user-id');
+        const username = button.getAttribute('data-username');
+
+        if (!confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+            return;
+        }
+
+        const csrf = getCsrfToken();
+
+        console.log('Deleting user with ID:', userId);
+        console.log('CSRF Token:', csrf.token);
+        console.log('CSRF Header:', csrf.header);
+
+        // Check if CSRF token is available
+        if (!csrf.token) {
+            alert('❌ Error: CSRF token not available. Please refresh the page and try again.');
+            console.error('CSRF token is missing');
+            return;
+        }
+
+        fetch(`/admin/user/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrf.header]: csrf.token
+            }
+        })
+            .then(res => {
+                console.log('Response status:', res.status);
+                if (!res.ok) {
+                    if (res.status === 403) {
+                        throw new Error('Access denied. Please check your permissions.');
+                    } else if (res.status === 400) {
+                        return res.json().then(data => {
+                            throw new Error(data.message || 'Bad request');
+                        });
+                    } else {
+                        throw new Error(`HTTP error! status: ${res.status}`);
+                    }
+                }
+                return res.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    alert('✅ User deleted successfully!');
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('❌ Error deleting user: ' + err.message);
+            });
+    }
+</script>
+</body>
+</html>
